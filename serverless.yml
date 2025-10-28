@@ -14,9 +14,7 @@ provider:
   httpApi:
     cors:
       allowedOrigins:
-        - http://localhost:5173
-        - http://localhost:3000
-        - http://localhost:5174
+        - https://korrige-ai-web.vercel.app
       allowedHeaders:
         - Content-Type
         - Authorization
