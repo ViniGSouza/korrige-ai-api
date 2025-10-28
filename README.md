@@ -1,4 +1,4 @@
-# Corrige AI API
+# Korrige AI API
 
 API serverless para correção automatizada de redações do ENEM usando inteligência artificial (Claude e GPT-4).
 
