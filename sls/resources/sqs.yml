@@ -1,0 +1,49 @@
+Resources:
+  # Dead Letter Queue para mensagens que falham no processamento
+  EssayProcessingDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: ${self:service}-essay-processing-dlq-${self:provider.stage}
+      MessageRetentionPeriod: 1209600 # 14 dias
+      Tags:
+        - Key: Environment
+          Value: ${self:provider.stage}
+        - Key: Service
+          Value: ${self:service}
+
+  # Fila principal para processamento de redações
+  EssayProcessingQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: ${self:service}-essay-processing-${self:provider.stage}
+      VisibilityTimeout: 300 # 5 minutos (deve ser >= timeout da Lambda)
+      MessageRetentionPeriod: 345600 # 4 dias
+      ReceiveMessageWaitTimeSeconds: 20 # Long polling
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt EssayProcessingDLQ.Arn
+        maxReceiveCount: 3 # Após 3 tentativas, vai para DLQ
+      Tags:
+        - Key: Environment
+          Value: ${self:provider.stage}
+        - Key: Service
+          Value: ${self:service}
+
+  # Alarme CloudWatch para monitorar mensagens na DLQ
+  EssayProcessingDLQAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: ${self:service}-dlq-messages-${self:provider.stage}
+      AlarmDescription: Alerta quando mensagens aparecem na DLQ
+      MetricName: ApproximateNumberOfMessagesVisible
+      Namespace: AWS/SQS
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt EssayProcessingDLQ.QueueName
+      AlarmActions:
+        - !Ref DLQAlarmsTopic
+      TreatMissingData: notBreaching

@@ -1,0 +1,148 @@
+org: vinigsouza
+app: corrige-ai-api
+service: corrige-ai-api
+
+provider:
+  name: aws
+  region: sa-east-1
+  runtime: nodejs22.x
+  stage: ${opt:stage, 'dev'}
+  memorySize: 512
+  timeout: 30
+  logRetentionInDays: 7
+
+  httpApi:
+    cors:
+      allowedOrigins:
+        - http://localhost:5173
+        - http://localhost:3000
+        - http://localhost:5174
+      allowedHeaders:
+        - Content-Type
+        - Authorization
+        - X-Amz-Date
+        - X-Api-Key
+        - X-Amz-Security-Token
+        - X-Amz-User-Agent
+      allowedMethods:
+        - GET
+        - POST
+        - PUT
+        - DELETE
+        - PATCH
+        - OPTIONS
+      maxAge: 300
+    authorizers:
+      cognitoAuthorizer:
+        type: jwt
+        identitySource: $request.header.Authorization
+        issuerUrl: !Sub https://cognito-idp.${AWS::Region}.amazonaws.com/${UserPool}
+        audience:
+          - !Ref UserPoolClient
+
+  environment:
+    STAGE: ${self:provider.stage}
+    MAIN_TABLE_NAME: !Ref MainTable
+    ESSAYS_BUCKET_NAME: !Ref EssaysBucket
+    ESSAY_PROCESSING_QUEUE_URL: !Ref EssayProcessingQueue
+    ESSAY_DLQ_URL: !Ref EssayProcessingDLQ
+    USER_POOL_ID: !Ref UserPool
+    USER_POOL_CLIENT_ID: !Ref UserPoolClient
+    ANTHROPIC_API_KEY: ${env:ANTHROPIC_API_KEY}
+    OPENAI_API_KEY: ${env:OPENAI_API_KEY}
+
+  iam:
+    role:
+      statements:
+        # DynamoDB
+        - Effect: Allow
+          Action:
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+            - dynamodb:Query
+            - dynamodb:Scan
+          Resource:
+            - !GetAtt MainTable.Arn
+            - !Sub "${MainTable.Arn}/index/*"
+
+        # S3
+        - Effect: Allow
+          Action:
+            - s3:GetObject
+            - s3:PutObject
+            - s3:DeleteObject
+          Resource:
+            - !Sub "${EssaysBucket.Arn}/*"
+
+        - Effect: Allow
+          Action:
+            - s3:ListBucket
+          Resource:
+            - !GetAtt EssaysBucket.Arn
+
+        # SQS
+        - Effect: Allow
+          Action:
+            - sqs:SendMessage
+            - sqs:ReceiveMessage
+            - sqs:DeleteMessage
+            - sqs:GetQueueAttributes
+          Resource:
+            - !GetAtt EssayProcessingQueue.Arn
+            - !GetAtt EssayProcessingDLQ.Arn
+
+        # Cognito
+        - Effect: Allow
+          Action:
+            - cognito-idp:AdminCreateUser
+            - cognito-idp:AdminSetUserPassword
+            - cognito-idp:AdminGetUser
+            - cognito-idp:AdminUpdateUserAttributes
+            - cognito-idp:ListUsers
+          Resource:
+            - !GetAtt UserPool.Arn
+
+        # Textract (para OCR de imagens)
+        - Effect: Allow
+          Action:
+            - textract:DetectDocumentText
+            - textract:AnalyzeDocument
+          Resource: "*"
+
+        # SNS (para alarmes DLQ)
+        - Effect: Allow
+          Action:
+            - sns:Publish
+          Resource:
+            - !Ref DLQAlarmsTopic
+
+plugins:
+  - serverless-offline
+
+build:
+  esbuild:
+    bundle: true
+    minify: false
+    sourcemap: true
+    exclude:
+      - "@aws-sdk/*"
+    target: node22
+    platform: node
+    mainFields: [module, main]
+    format: esm
+    banner:
+      js: "import { createRequire } from 'module';const require = createRequire(import.meta.url);"
+
+functions:
+  - ${file(./sls/auth.yml)}
+  - ${file(./sls/users.yml)}
+  - ${file(./sls/essays.yml)}
+
+resources:
+  - ${file(./sls/resources/dynamodb.yml)}
+  - ${file(./sls/resources/s3.yml)}
+  - ${file(./sls/resources/sqs.yml)}
+  - ${file(./sls/resources/cognito.yml)}
+  - ${file(./sls/resources/sns.yml)}

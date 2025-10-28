@@ -1,0 +1,60 @@
+createEssay:
+  handler: src/functions/essays/create-essay.handler
+  description: Criar nova redação para correção
+  events:
+    - httpApi:
+        path: /essays
+        method: post
+        authorizer:
+          name: cognitoAuthorizer
+
+getEssay:
+  handler: src/functions/essays/get-essay.handler
+  description: Obter detalhes de uma redação
+  events:
+    - httpApi:
+        path: /essays/{essayId}
+        method: get
+        authorizer:
+          name: cognitoAuthorizer
+
+listEssays:
+  handler: src/functions/essays/list-essays.handler
+  description: Listar redações do usuário
+  events:
+    - httpApi:
+        path: /essays
+        method: get
+        authorizer:
+          name: cognitoAuthorizer
+
+getUploadUrl:
+  handler: src/functions/essays/get-upload-url.handler
+  description: Obter URL pré-assinada para upload de arquivo
+  events:
+    - httpApi:
+        path: /essays/upload-url
+        method: post
+        authorizer:
+          name: cognitoAuthorizer
+
+processEssay:
+  handler: src/functions/essays/process-essay.handler
+  description: Processar redação enviada via SQS
+  timeout: 300
+  memorySize: 1024
+  events:
+    - sqs:
+        arn: !GetAtt EssayProcessingQueue.Arn
+        batchSize: 1
+        functionResponseType: ReportBatchItemFailures
+
+deleteEssay:
+  handler: src/functions/essays/delete-essay.handler
+  description: Deletar uma redação
+  events:
+    - httpApi:
+        path: /essays/{essayId}
+        method: delete
+        authorizer:
+          name: cognitoAuthorizer

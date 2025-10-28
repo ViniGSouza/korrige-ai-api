@@ -1,0 +1,19 @@
+getProfile:
+  handler: src/functions/users/get-profile.handler
+  description: Obter perfil do usuário autenticado
+  events:
+    - httpApi:
+        path: /users/profile
+        method: get
+        authorizer:
+          name: cognitoAuthorizer
+
+updateProfile:
+  handler: src/functions/users/update-profile.handler
+  description: Atualizar perfil do usuário autenticado
+  events:
+    - httpApi:
+        path: /users/profile
+        method: put
+        authorizer:
+          name: cognitoAuthorizer

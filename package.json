@@ -1,0 +1,58 @@
+{
+  "name": "corrige-ai-api",
+  "version": "1.0.0",
+  "description": "API serverless para correção de redações do ENEM usando IA",
+  "main": "index.js",
+  "type": "module",
+  "packageManager": "pnpm@10.5.2",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "dev": "serverless dev",
+    "deploy": "serverless deploy",
+    "deploy:prod": "serverless deploy --stage prod",
+    "remove": "serverless remove",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.32.1",
+    "@aws-sdk/client-cognito-identity-provider": "^3.709.0",
+    "@aws-sdk/client-dynamodb": "^3.709.0",
+    "@aws-sdk/client-s3": "^3.709.0",
+    "@aws-sdk/client-sns": "^3.709.0",
+    "@aws-sdk/client-sqs": "^3.709.0",
+    "@aws-sdk/client-textract": "^3.709.0",
+    "@aws-sdk/lib-dynamodb": "^3.709.0",
+    "@aws-sdk/s3-request-presigner": "^3.709.0",
+    "aws-lambda": "^1.0.7",
+    "ksuid": "^3.0.0",
+    "mammoth": "^1.8.0",
+    "openai": "^4.77.0",
+    "pdf-parse": "^1.1.1",
+    "reflect-metadata": "^0.2.2",
+    "sharp": "^0.33.5",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "@types/aws-lambda": "^8.10.145",
+    "@types/node": "^22.10.2",
+    "@types/pdf-parse": "^1.1.4",
+    "esbuild": "^0.24.2",
+    "esbuild-plugin-tsc": "^0.4.0",
+    "eslint": "^9.17.0",
+    "serverless": "^4.4.11",
+    "serverless-esbuild": "^1.54.3",
+    "serverless-offline": "^14.4.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.18.1",
+    "vitest": "^2.1.8"
+  },
+  "license": "MIT"
+}

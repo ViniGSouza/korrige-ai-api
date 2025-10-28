@@ -1,0 +1,63 @@
+Resources:
+  EssaysBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: ${self:service}-essays-${self:provider.stage}-${aws:accountId}
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          # Mover arquivos antigos para Glacier após 90 dias
+          - Id: MoveToGlacier
+            Status: Enabled
+            Transitions:
+              - TransitionInDays: 90
+                StorageClass: GLACIER
+          # Deletar versões antigas após 30 dias
+          - Id: DeleteOldVersions
+            Status: Enabled
+            NoncurrentVersionExpirationInDays: 30
+      CorsConfiguration:
+        CorsRules:
+          - AllowedOrigins:
+              - '*'
+            AllowedHeaders:
+              - '*'
+            AllowedMethods:
+              - GET
+              - PUT
+              - POST
+              - DELETE
+              - HEAD
+            MaxAge: 3000
+      Tags:
+        - Key: Environment
+          Value: ${self:provider.stage}
+        - Key: Service
+          Value: ${self:service}
+
+  EssaysBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref EssaysBucket
+      PolicyDocument:
+        Statement:
+          - Sid: DenyInsecureConnections
+            Effect: Deny
+            Principal: '*'
+            Action: 's3:*'
+            Resource:
+              - !GetAtt EssaysBucket.Arn
+              - !Sub '${EssaysBucket.Arn}/*'
+            Condition:
+              Bool:
+                'aws:SecureTransport': false

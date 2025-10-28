@@ -1,0 +1,57 @@
+signUp:
+  handler: src/functions/auth/sign-up.handler
+  description: Registrar novo usuário
+  events:
+    - httpApi:
+        path: /auth/sign-up
+        method: post
+
+signIn:
+  handler: src/functions/auth/sign-in.handler
+  description: Autenticar usuário
+  events:
+    - httpApi:
+        path: /auth/sign-in
+        method: post
+
+confirmSignUp:
+  handler: src/functions/auth/confirm-sign-up.handler
+  description: Confirmar registro de usuário
+  events:
+    - httpApi:
+        path: /auth/confirm-sign-up
+        method: post
+
+refreshToken:
+  handler: src/functions/auth/refresh-token.handler
+  description: Renovar token de acesso
+  events:
+    - httpApi:
+        path: /auth/refresh-token
+        method: post
+
+forgotPassword:
+  handler: src/functions/auth/forgot-password.handler
+  description: Solicitar recuperação de senha
+  events:
+    - httpApi:
+        path: /auth/forgot-password
+        method: post
+
+confirmForgotPassword:
+  handler: src/functions/auth/confirm-forgot-password.handler
+  description: Confirmar nova senha
+  events:
+    - httpApi:
+        path: /auth/confirm-forgot-password
+        method: post
+
+changePassword:
+  handler: src/functions/auth/change-password.handler
+  description: Alterar senha do usuário autenticado
+  events:
+    - httpApi:
+        path: /auth/change-password
+        method: post
+        authorizer:
+          name: cognitoAuthorizer

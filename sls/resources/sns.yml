@@ -1,0 +1,27 @@
+Resources:
+  DLQAlarmsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: ${self:service}-dlq-alarms-${self:provider.stage}
+      DisplayName: Alarmes da Dead Letter Queue
+      Tags:
+        - Key: Environment
+          Value: ${self:provider.stage}
+        - Key: Service
+          Value: ${self:service}
+
+  # Subscription para receber alertas por email (opcional - configure o email)
+  # Descomente e adicione seu email se quiser receber notificações
+  # DLQAlarmsEmailSubscription:
+  #   Type: AWS::SNS::Subscription
+  #   Properties:
+  #     Protocol: email
+  #     TopicArn: !Ref DLQAlarmsTopic
+  #     Endpoint: seu-email@exemplo.com
+
+Outputs:
+  DLQAlarmsTopicArn:
+    Description: ARN do tópico SNS para alarmes da DLQ
+    Value: !Ref DLQAlarmsTopic
+    Export:
+      Name: ${self:service}-DLQAlarmsTopicArn-${self:provider.stage}
