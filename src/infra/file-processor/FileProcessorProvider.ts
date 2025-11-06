@@ -1,6 +1,5 @@
 import mammoth from "mammoth";
 import pdfParse from "pdf-parse";
-import sharp from "sharp";
 import {
   TextractClient,
   DetectDocumentTextCommand,
@@ -17,7 +16,6 @@ const logger = new Logger("FileProcessorProvider");
 
 // AWS Textract limits
 const TEXTRACT_MAX_SIZE = 5 * 1024 * 1024; // 5MB
-const MAX_IMAGE_DIMENSION = 4096; // pixels
 
 export class FileProcessorProvider implements IFileProcessor {
   private textractClient: TextractClient;
@@ -63,27 +61,24 @@ export class FileProcessorProvider implements IFileProcessor {
     });
 
     try {
-      // Processar imagem se necessário
-      let processedBuffer = imageBuffer;
-
-      // Se a imagem for muito grande, redimensionar
+      // Validar tamanho da imagem
       if (imageBuffer.length > TEXTRACT_MAX_SIZE) {
-        logger.info("Image too large, resizing...", {
-          originalSize: imageBuffer.length,
+        const sizeMB = (imageBuffer.length / (1024 * 1024)).toFixed(2);
+        const maxSizeMB = (TEXTRACT_MAX_SIZE / (1024 * 1024)).toFixed(2);
+        
+        logger.warn("Image exceeds Textract size limit", {
+          imageSize: imageBuffer.length,
+          maxSize: TEXTRACT_MAX_SIZE,
         });
-        processedBuffer = await this.resizeImage(imageBuffer);
-      }
-
-      // Validar se ainda está dentro do limite
-      if (processedBuffer.length > TEXTRACT_MAX_SIZE) {
+        
         throw new Error(
-          `Image still too large after resize: ${processedBuffer.length} bytes (max: ${TEXTRACT_MAX_SIZE})`
+          `A imagem é muito grande (${sizeMB}MB). O tamanho máximo permitido é ${maxSizeMB}MB. Por favor, envie uma imagem menor.`
         );
       }
 
       const command = new DetectDocumentTextCommand({
         Document: {
-          Bytes: processedBuffer,
+          Bytes: imageBuffer,
         },
       });
 
@@ -121,40 +116,6 @@ export class FileProcessorProvider implements IFileProcessor {
     } catch (error) {
       logger.error("Error extracting text from image", error as Error);
       throw error;
-    }
-  }
-
-  private async resizeImage(imageBuffer: Buffer): Promise<Buffer> {
-    try {
-      const metadata = await sharp(imageBuffer).metadata();
-
-      logger.info("Resizing image", {
-        originalWidth: metadata.width,
-        originalHeight: metadata.height,
-        format: metadata.format,
-      });
-
-      const resized = await sharp(imageBuffer)
-        .resize(MAX_IMAGE_DIMENSION, MAX_IMAGE_DIMENSION, {
-          fit: "inside",
-          withoutEnlargement: true,
-        })
-        .jpeg({ quality: 90, mozjpeg: true }) // Converter para JPEG com boa qualidade
-        .toBuffer();
-
-      logger.info("Image resized successfully", {
-        originalSize: imageBuffer.length,
-        newSize: resized.length,
-        reduction:
-          Math.round(
-            ((imageBuffer.length - resized.length) / imageBuffer.length) * 100
-          ) + "%",
-      });
-
-      return resized;
-    } catch (error) {
-      logger.error("Error resizing image", error as Error);
-      throw new Error("Falha ao redimensionar a imagem");
     }
   }
 
