@@ -1,6 +1,8 @@
 export const config = {
   aws: {
-    region: process.env.AWS_REGION || 'sa-east-1',
+    region: process.env.AWS_REGION || "sa-east-1",
+    // Textract não está disponível em sa-east-1
+    textractRegion: process.env.TEXTRACT_REGION || "us-east-1",
   },
   dynamodb: {
     tableName: process.env.MAIN_TABLE_NAME!,
@@ -26,7 +28,13 @@ export const config = {
   },
   upload: {
     maxFileSize: 10 * 1024 * 1024, // 10MB
-    allowedFileTypes: ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'] as string[],
+    allowedFileTypes: [
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+      "application/pdf",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ] as string[],
     presignedUrlExpiration: 300, // 5 minutos
   },
 };
